@@ -1,0 +1,37 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<!-- <bean id="databaseService" class="sample.camel.DatabaseService" /> -->
+	<bean id="CommonBean" class="sample.camel.NewBean" />
+	<bean id="sqlComponent" class="org.apache.camel.component.sql.SqlComponent">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<camelContext xmlns="http://camel.apache.org/schema/spring">   <!-- no error it works -->
+		<propertyPlaceholder id="placeholder" location="classpath:sql.properties" />
+
+
+
+		<!-- To recieve message from queue and send to database -->
+	<!-- 	 <route> <from uri="activemq:sample.queue" /> <transform> <method ref="CommonBean" 
+			method="generateNewInsert(${body})" /> </transform> <to uri="sqlComponent:{{sql.insertNewTransaction}}" 
+			/> </route> -->
+
+		<!-- To Send json data to queue -->
+	<!--  	 <route> <from uri="timer://foo?repeatCount=1" /> <setBody> <constant>{"id":"7","name":"Deposit32","purpose":"savings3"} 
+			</constant> </setBody> <to uri="activemq:sample.queue" /> </route> -->
+
+	  	<route id="processNewTopic-route">
+
+			<from uri="sqlComponent:{{sql.selectNewTopic}}?
+						consumer.onConsume={{sql.markNewTopic}}" />	
+			<to uri="sqlComponent:{{sql.committx}}"	/>				
+			<to uri="bean:CommonBean?method=processNewTopic" />
+			<to uri="activemq:sample.queue" />
+		</route>
+
+
+	</camelContext>
+
+</beans>
+
